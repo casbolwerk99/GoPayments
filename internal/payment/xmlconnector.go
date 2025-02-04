@@ -11,9 +11,37 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	msgId = uuid.New().String()
-)
+type GrpHdr struct {
+	MsgId   string `xml:"MsgId"`
+	CreDtTm string `xml:"CreDtTm"`
+}
+
+type IBAN struct {
+	IBAN string `xml:"IBAN"`
+}
+
+type Cdtr struct {
+	Nm       string   `xml:"Nm"`
+	CdtrAcct CdtrAcct `xml:"CdtrAcct"`
+}
+
+type CdtrAcct struct {
+	Id IBAN `xml:"Id"`
+}
+
+type DbtrAcct struct {
+	Id IBAN `xml:"Id"`
+}
+
+type Dbtr struct {
+	Nm       string   `xml:"Nm"`
+	CdtrAcct DbtrAcct `xml:"CdtrAcct"`
+}
+
+type Amt struct {
+	Ccy   string  `xml:"Ccy,attr"`
+	Value float64 `xml:",chardata"`
+}
 
 type Document struct {
 	XMLName xml.Name `xml:"Document"`
@@ -26,39 +54,7 @@ type Document struct {
 	Amt     Amt      `xml:"Amt"`
 }
 
-type GrpHdr struct {
-	MsgId   string `xml:"MsgId"`
-	CreDtTm string `xml:"CreDtTm"`
-}
-
-type Cdtr struct {
-	Nm       string   `xml:"Nm"`
-	CdtrAcct CdtrAcct `xml:"CdtrAcct"`
-}
-
-type CdtrAcct struct {
-	Id IBAN `xml:"Id"`
-}
-
-type IBAN struct {
-	IBAN string `xml:"IBAN"`
-}
-
-type Dbtr struct {
-	Nm       string   `xml:"Nm"`
-	CdtrAcct DbtrAcct `xml:"CdtrAcct"`
-}
-
-type DbtrAcct struct {
-	Id IBAN `xml:"Id"`
-}
-
-type Amt struct {
-	Ccy   string  `xml:"Ccy,attr"`
-	Value float64 `xml:",chardata"`
-}
-
-func generateXml(payment Payment) []byte {
+func generateXml(payment Payment, msgId string) []byte {
 	creDtTm := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
 
 	doc := Document{
@@ -84,7 +80,8 @@ func generateXml(payment Payment) []byte {
 }
 
 func WritePaymentToBank(payment Payment, filename string) error {
-	data := generateXml(payment)
+	msgId := uuid.New().String()
+	data := generateXml(payment, msgId)
 	err := os.WriteFile(filename+string(filepath.Separator)+msgId+".xml", data, 0644)
 	return err
 }
