@@ -77,7 +77,7 @@ func TestIsValidRequest(t *testing.T) {
 			expectedValid: true,
 		},
 		{
-			name: "Missing DebtorIban",
+			name: "Invalid DebtorIban",
 			payment: Payment{
 				DebtorIban:           "123",
 				DebtorName:           "company1",
@@ -86,31 +86,30 @@ func TestIsValidRequest(t *testing.T) {
 				Ammount:              42.99,
 				IdempotencyUniqueKey: "JXJ984XXXZ",
 			},
-			expectedValid: true, // should be false
+			expectedValid: false,
 		},
 		{
-			name: "Invalid Ammount Type",
+			name: "Invalid DebtorName",
 			payment: Payment{
 				DebtorIban:           "FR1112739000504482744411A64",
-				DebtorName:           "company1",
+				DebtorName:           "a",
 				CreditorIban:         "DE65500105179799248552",
 				CreditorName:         "beneficiary",
-				Ammount:              -42.99,
+				Ammount:              42.99,
 				IdempotencyUniqueKey: "JXJ984XXXZ",
 			},
-			expectedValid: true, // should be false
+			expectedValid: false,
 		},
 		{
-			name: "Invalid JSON Schema",
+			name: "Missing DebtorIban",
 			payment: Payment{
-				DebtorIban:           "FR1112739000504482744411A64",
 				DebtorName:           "company1",
 				CreditorIban:         "DE65500105179799248552",
 				CreditorName:         "beneficiary",
 				Ammount:              42.99,
 				IdempotencyUniqueKey: "JXJ984XXXZ",
 			},
-			expectedValid: true, // should be false
+			expectedValid: false,
 		},
 	}
 

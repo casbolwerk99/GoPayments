@@ -1,6 +1,7 @@
 package payment
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -8,12 +9,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/xeipuuv/gojsonschema"
+	"github.com/santhosh-tekuri/jsonschema"
 )
 
 var (
 	// TODO: make this relative and not OS specific
-	paymentSchemaPath = "file:///D:/Documents/go/numeral/data/request_schema.json"
+	paymentSchemaPath = "../../data/request_schema.json"
 )
 
 func isAuthorizedRequest(r *http.Request) bool {
@@ -37,20 +38,18 @@ func isAuthorizedRequest(r *http.Request) bool {
 }
 
 func isValidRequest(payment Payment) bool {
-	schemaLoader := gojsonschema.NewReferenceLoader(paymentSchemaPath)
-	documentLoader := gojsonschema.NewGoLoader(payment)
-
-	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	schema, err := jsonschema.NewCompiler().Compile(paymentSchemaPath)
 	if err != nil {
-		fmt.Println("Error validating payment:", err)
+		return false
+	}
+	instance, err := json.Marshal(payment)
+	if err != nil {
 		return false
 	}
 
-	if !result.Valid() {
-		fmt.Printf("The document is not valid. see errors :\n")
-		for _, desc := range result.Errors() {
-			fmt.Printf("- %s\n", desc)
-		}
+	if err = schema.Validate(bytes.NewReader(instance)); err != nil {
+		fmt.Println("Error validating payment:", err)
+		return false
 	}
 
 	return true
