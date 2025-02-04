@@ -12,8 +12,7 @@ import (
 	"github.com/santhosh-tekuri/jsonschema"
 )
 
-var (
-	// TODO: make this relative and not OS specific
+const (
 	paymentSchemaPath = "../../data/request_schema.json"
 )
 
@@ -77,8 +76,7 @@ func HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bankfolder := os.Getenv("BANK_FOLDER")
-	if err := WritePaymentToBank(payment, bankfolder); err != nil {
+	if err := WritePaymentToBank(payment, os.Getenv("BANK_FOLDER")); err != nil {
 		http.Error(w, "Failed to write payment to bank", http.StatusInternalServerError)
 		return
 	}
