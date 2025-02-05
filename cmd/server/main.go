@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/numeral/internal/payment"
@@ -13,8 +14,17 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file")
-		return
+		log.Fatal(err)
 	}
+
+	db, err := payment.InitializeDB()
+	if err != nil {
+		fmt.Println("Error initializing DB")
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// handler := payment.NewHandler(db)
 
 	http.HandleFunc("/payment-request", payment.HandleCreatePayment)
 	port := ":8080"

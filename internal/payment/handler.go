@@ -2,9 +2,11 @@ package payment
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -13,8 +15,16 @@ import (
 )
 
 const (
-	paymentSchemaPath = "../../data/request_schema.json"
+	paymentSchemaPath = "data/request_schema.json"
 )
+
+type Handler struct {
+	db *sql.DB
+}
+
+func NewHandler(db *sql.DB) *Handler {
+	return &Handler{db: db}
+}
 
 func isAuthorizedRequest(r *http.Request) bool {
 	authHeader := r.Header.Get("Authorization")
@@ -39,7 +49,7 @@ func isAuthorizedRequest(r *http.Request) bool {
 func isValidRequest(payment Payment) bool {
 	schema, err := jsonschema.NewCompiler().Compile(paymentSchemaPath)
 	if err != nil {
-		return false
+		log.Fatal(err)
 	}
 	instance, err := json.Marshal(payment)
 	if err != nil {
@@ -75,6 +85,12 @@ func HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	// err := InsertPayment(h.db, payment)
+	// if err != nil {
+	// 	http.Error(w, "Failed to insert payment", http.StatusInternalServerError)
+	// 	return
+	// }
 
 	if err := WritePaymentToBank(payment, os.Getenv("BANK_FOLDER")); err != nil {
 		http.Error(w, "Failed to write payment to bank", http.StatusInternalServerError)

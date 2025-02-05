@@ -44,6 +44,19 @@ Home of the payment package containing the services. Mainly the HTTP handler as 
     - Try to store payment as XML according to given XML in location of BANK_FOLDER env var
     - send back 200 HTTP status with payment encoded
 
+### Design
+
+Go in production seems to be a hotly debated topic. Found many differing ideas about project organization. Will link these two that I found most promising. I ended up going with a server project according to the official Go guide.
+
+- [Official Go project organization](https://go.dev/doc/modules/layout)
+- [Project organization in Go at SoundCloud](http://peter.bourgon.org/go-in-production/)
+
+Personally also found it quite confusing how exactly to handle environment variables, (relative) paths (different in tests than at runtime?!) and error returns. Lots to learn still! :)
+
+Decided to use `handler.go` as my main orchestrator throughout the customer journey, with most if not all functionality in the `internal` folder being called from the main HTTP handler `HandleCreatePayment`.
+
+Found out pretty late in the three hours about the `idempotency_unique_key` and its meaning as to handling multiple payment requests with a shared idempotency ID and that all tying into the DB design. Maybe a bit much for a small project like this.
+
 ### Limitations
 
 - In the interest of time, I failed to get a relative path to work with the JSONSchema provided. in `internal/payment/handler.go`, the path is hard-coded to my PC's absolute path.
