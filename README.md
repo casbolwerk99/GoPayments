@@ -51,18 +51,29 @@ Go in production seems to be a hotly debated topic. Found many differing ideas a
 - [Official Go project organization](https://go.dev/doc/modules/layout)
 - [Project organization in Go at SoundCloud](http://peter.bourgon.org/go-in-production/)
 
-Personally also found it quite confusing how exactly to handle environment variables, (relative) paths (different in tests than at runtime?!) and error returns. Lots to learn still! :)
+Personally also found it quite confusing how exactly to handle environment variables, (relative) paths (different in tests than at runtime?!) and error/panic returns. Lots to learn still! :)
 
 Decided to use `handler.go` as my main orchestrator throughout the customer journey, with most if not all functionality in the `internal` folder being called from the main HTTP handler `HandleCreatePayment`.
 
-Found out pretty late in the three hours about the `idempotency_unique_key` and its meaning as to handling multiple payment requests with a shared idempotency ID and that all tying into the DB design. Maybe a bit much for a small project like this.
+Found out pretty late in the three hours about the `idempotency_unique_key` and its meaning as to handling multiple payment requests with a shared idempotency ID and that all tying into the DB design. Definitely a bit much for the three hours I had.
+
+Introduced asynchrony in this later stage, because DB handling and waiting for the 'bank' response should definitely be done asynchronously.
+
+### Changes from 3 hour version
+
+- SQLite DB support
+- Listen for bank response in a goroutine, update DB
+- Working tests for HTTP authorization and validation (not complete test coverage)
+- Use panic instead of log.Fatal to be more Go idiomatic
+- Make everything run asynchronously
 
 ### Limitations
 
-- In the interest of time, I failed to get a relative path to work with the JSONSchema provided. in `internal/payment/handler.go`, the path is hard-coded to my PC's absolute path.
-- Due to time shortage, I failed to get the JSONSchema to be loaded.
-- The project is missing the following requirements:
-    - Store request in SQLite
+- The project is missing the following features and/or functionality:
     - Wait for bank response
         - receive return file
         - update DB
+    - XML validation
+    - Idempotency
+- Besides that, limitations from my perspective:
+    - No complete test coverage, just showing off some testing

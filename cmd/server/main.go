@@ -30,6 +30,4 @@ func main() {
 	port := ":8080"
 	fmt.Println("Server is running on http://localhost" + port)
 	http.ListenAndServe(port, nil)
-
-	payment.PrintDB(db)
 }

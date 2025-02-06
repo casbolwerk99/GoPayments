@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/santhosh-tekuri/jsonschema"
 )
@@ -86,17 +87,43 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := InsertPayment(h.db, payment)
-	if err != nil {
-		http.Error(w, "Failed to insert payment", http.StatusInternalServerError)
-		return
-	}
+	paymentInsertionChannel := make(chan error)
 
-	if err := WritePaymentToBank(payment, os.Getenv("BANK_FOLDER")); err != nil {
-		http.Error(w, "Failed to write payment to bank", http.StatusInternalServerError)
-		return
-	}
+	go func() {
+		err := InsertPayment(h.db, payment)
+		if err != nil {
+			paymentInsertionChannel <- fmt.Errorf("failed to insert payment: %w", err)
+			return
+		}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(payment)
+		paymentInsertionChannel <- nil
+	}()
+
+	go func() {
+		if err := WritePaymentToBank(payment, os.Getenv("BANK_FOLDER")); err != nil {
+			fmt.Println("Failed to write payment to bank", err)
+		}
+	}()
+
+	go func() {
+		if err := ProcessBankResponse(h.db, payment.IdempotencyUniqueKey); err != nil {
+			fmt.Println("Failed to listen for and process bank response", err)
+		}
+	}()
+
+	select {
+
+	case err := <-paymentInsertionChannel:
+		fmt.Println("Payment channel updated")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(payment)
+
+	case <-time.After(30 * time.Second):
+		http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+
+	}
 }

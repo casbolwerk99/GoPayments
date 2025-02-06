@@ -53,14 +53,14 @@ type Document struct {
 	Amt     Amt      `xml:"Amt"`
 }
 
-func generateXml(payment Payment, msgId string) []byte {
+func generateXml(payment Payment) []byte {
 	creDtTm := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
 
 	doc := Document{
 		Xmlns:  "urn:iso:std:iso:20022:tech:xsd:pain.008.002.02",
 		Xsi:    "http://www.w3.org/2001/XMLSchema-instance",
 		Schema: "urn:iso:std:iso:20022:tech:xsd:pain.008.002.02 pain.008.002.02.xsd",
-		GrpHdr: GrpHdr{MsgId: msgId, CreDtTm: creDtTm},
+		GrpHdr: GrpHdr{MsgId: payment.IdempotencyUniqueKey, CreDtTm: creDtTm},
 		Cdtr:   Cdtr{Nm: payment.CreditorName, CdtrAcct: CdtrAcct{Id: IBAN{IBAN: payment.CreditorIban}}},
 		Dbtr:   Dbtr{Nm: payment.DebtorName, CdtrAcct: DbtrAcct{Id: IBAN{IBAN: payment.DebtorIban}}},
 		Amt:    Amt{Ccy: "EUR", Value: payment.Ammount},
@@ -73,14 +73,12 @@ func generateXml(payment Payment, msgId string) []byte {
 
 	xmlData = append([]byte(`<?xml version="1.0" encoding="UTF-8"?>`), xmlData...)
 
-	// fmt.Println(string(xmlData))
-
 	return xmlData
 }
 
 func WritePaymentToBank(payment Payment, filename string) error {
+	data := generateXml(payment)
 	msgId := uuid.New().String()
-	data := generateXml(payment, msgId)
 	err := os.WriteFile(filename+string(filepath.Separator)+msgId+".xml", data, 0644)
 	return err
 }

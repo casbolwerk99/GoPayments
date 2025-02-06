@@ -27,7 +27,7 @@ func InitializeDB() (*sql.DB, error) {
 	`
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
+		fmt.Println(err, ":", sqlStmt)
 		return nil, err
 	}
 
@@ -35,6 +35,7 @@ func InitializeDB() (*sql.DB, error) {
 }
 
 func PrintDB(db *sql.DB) {
+	fmt.Println("Printing DB...")
 	rows, err := db.Query("select id, status from payments")
 	if err != nil {
 		log.Fatal(err)
@@ -54,7 +55,14 @@ func PrintDB(db *sql.DB) {
 func InsertPayment(db *sql.DB, payment Payment) error {
 	// inspired by https://github.com/mattn/go-sqlite3/blob/master/_example/json/json.go
 
-	stmt, err := db.Prepare("insert into payments(id, status) values(?, ?)")
+	tx, err := db.Begin()
+	if err != nil {
+		fmt.Println("Failed to start transaction:", err)
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare("insert into payments(id, status) values(?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,8 +71,15 @@ func InsertPayment(db *sql.DB, payment Payment) error {
 	id := payment.IdempotencyUniqueKey
 	status := "REQUESTED"
 
+	fmt.Println("Inserting payment with id:", id)
+
 	_, err = stmt.Exec(id, status)
 	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		fmt.Println("Failed to commit transaction:", err)
 		return err
 	}
 
@@ -73,84 +88,36 @@ func InsertPayment(db *sql.DB, payment Payment) error {
 	return nil
 }
 
-func InsertData(db *sql.DB) {
+func UpdatePayment(db *sql.DB, id string, status string) error {
+	// inspired by https://github.com/mattn/go-sqlite3/blob/master/_example/json/json.go
+
 	tx, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Failed to start transaction:", err)
+		return err
 	}
-	stmt, err := tx.Prepare("insert into foo(id, name) values(?, ?)")
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`update payments set status = ? where id = ?`)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	for i := 0; i < 100; i++ {
-		_, err = stmt.Exec(i, fmt.Sprintf("こんにちは世界%03d", i))
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	err = tx.Commit()
+
+	fmt.Println("Updating payment with id:", id)
+
+	_, err = stmt.Exec(status, id)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Failed to execute SQL statement:", err)
+		return err
 	}
 
-	rows, err := db.Query("select id, name from foo")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var id int
-		var name string
-		err = rows.Scan(&id, &name)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(id, name)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
+	if err := tx.Commit(); err != nil {
+		fmt.Println("Failed to commit transaction:", err)
+		return err
 	}
 
-	stmt, err = db.Prepare("select name from foo where id = ?")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmt.Close()
-	var name string
-	err = stmt.QueryRow("3").Scan(&name)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(name)
+	PrintDB(db)
 
-	_, err = db.Exec("delete from foo")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = db.Exec("insert into foo(id, name) values(1, 'foo'), (2, 'bar'), (3, 'baz')")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	rows, err = db.Query("select id, name from foo")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var id int
-		var name string
-		err = rows.Scan(&id, &name)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(id, name)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-	}
+	return nil
 }
