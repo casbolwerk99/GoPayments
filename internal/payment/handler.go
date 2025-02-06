@@ -64,7 +64,7 @@ func isValidRequest(payment Payment) bool {
 	return true
 }
 
-func HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 	if !isAuthorizedRequest(r) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -86,11 +86,11 @@ func HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// err := InsertPayment(h.db, payment)
-	// if err != nil {
-	// 	http.Error(w, "Failed to insert payment", http.StatusInternalServerError)
-	// 	return
-	// }
+	err := InsertPayment(h.db, payment)
+	if err != nil {
+		http.Error(w, "Failed to insert payment", http.StatusInternalServerError)
+		return
+	}
 
 	if err := WritePaymentToBank(payment, os.Getenv("BANK_FOLDER")); err != nil {
 		http.Error(w, "Failed to write payment to bank", http.StatusInternalServerError)

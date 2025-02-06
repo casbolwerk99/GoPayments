@@ -4,7 +4,6 @@ package payment
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -23,7 +22,7 @@ func InitializeDB() (*sql.DB, error) {
 	}
 
 	sqlStmt := `
-	create table payments (id integer not null primary key, status text);
+	create table payments (id text not null primary key, status text);
 	delete from payments;
 	`
 	_, err = db.Exec(sqlStmt)
@@ -35,22 +34,41 @@ func InitializeDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func InsertPayment(db *sql.DB, payment Payment) error {
-	tx, err := db.Begin()
+func PrintDB(db *sql.DB) {
+	rows, err := db.Query("select id, status from payments")
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var status string
+		err = rows.Scan(&id, &status)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(id, status)
+	}
+}
 
-	stmt, err := tx.Prepare("insert into payments(id, status) values(?, ?)")
+func InsertPayment(db *sql.DB, payment Payment) error {
+	// inspired by https://github.com/mattn/go-sqlite3/blob/master/_example/json/json.go
+
+	stmt, err := db.Prepare("insert into payments(id, status) values(?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(json.Marshal(payment))
+	id := payment.IdempotencyUniqueKey
+	status := "REQUESTED"
+
+	_, err = stmt.Exec(id, status)
 	if err != nil {
 		return err
 	}
+
+	PrintDB(db)
 
 	return nil
 }

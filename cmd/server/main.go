@@ -24,10 +24,12 @@ func main() {
 	}
 	defer db.Close()
 
-	// handler := payment.NewHandler(db)
+	handler := payment.NewHandler(db)
 
-	http.HandleFunc("/payment-request", payment.HandleCreatePayment)
+	http.HandleFunc("/payment-request", handler.HandleCreatePayment)
 	port := ":8080"
 	fmt.Println("Server is running on http://localhost" + port)
 	http.ListenAndServe(port, nil)
+
+	payment.PrintDB(db)
 }

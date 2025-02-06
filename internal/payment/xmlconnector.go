@@ -2,7 +2,6 @@ package payment
 
 import (
 	"encoding/xml"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -74,7 +73,7 @@ func generateXml(payment Payment, msgId string) []byte {
 
 	xmlData = append([]byte(`<?xml version="1.0" encoding="UTF-8"?>`), xmlData...)
 
-	fmt.Println(string(xmlData))
+	// fmt.Println(string(xmlData))
 
 	return xmlData
 }
