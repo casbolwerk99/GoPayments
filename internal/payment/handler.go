@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -17,6 +16,8 @@ import (
 
 const (
 	paymentSchemaPath = "data/request_schema.json"
+	// in case of running tests, use the following path
+	// paymentSchemaPath = "../../data/request_schema.json"
 )
 
 type Handler struct {
@@ -50,7 +51,7 @@ func isAuthorizedRequest(r *http.Request) bool {
 func isValidRequest(payment Payment) bool {
 	schema, err := jsonschema.NewCompiler().Compile(paymentSchemaPath)
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("Error compiling JSONSchema: %v", err))
 	}
 	instance, err := json.Marshal(payment)
 	if err != nil {

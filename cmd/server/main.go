@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/numeral/internal/payment"
@@ -14,13 +13,13 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file")
-		log.Fatal(err)
+		panic(fmt.Sprintf("Error loading .env file: %v", err))
 	}
 
 	db, err := payment.InitializeDB()
 	if err != nil {
 		fmt.Println("Error initializing DB")
-		log.Fatal(err)
+		panic(fmt.Sprintf("Error initializing DB: %v", err))
 	}
 	defer db.Close()
 

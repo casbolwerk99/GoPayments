@@ -2,7 +2,7 @@ package payment
 
 import (
 	"encoding/xml"
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -68,7 +68,7 @@ func generateXml(payment Payment) []byte {
 
 	xmlData, err := xml.MarshalIndent(doc, "", "  ")
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("Error compiling XML document: %v", err))
 	}
 
 	xmlData = append([]byte(`<?xml version="1.0" encoding="UTF-8"?>`), xmlData...)

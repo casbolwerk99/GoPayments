@@ -19,6 +19,8 @@ Content-Type: application/json
 { "debtor_iban": "FR1112739000504482744411A64", "debtor_name": "company1", "creditor_iban": "DE65500105179799248552", "creditor_name": "beneficiary", "ammount": 42.99, "idempotency_unique_key": "JXJ984XXXZ" }
 ```
 
+You can also find a Python file to do some bulk requests. I used this to test the async capabilities of the application.
+
 ### Project structure
 
 numeral  
@@ -31,18 +33,21 @@ Sample data
 Home of the main package and the web server launch function
 
 ./internal/payment  
-Home of the payment package containing the services. Mainly the HTTP handler as well as the bank handler. 
+Home of the payment package containing the services. Mainly the HTTP handler as well as the bank connector. 
 
 ### Customer journery
 
+- (Re-)initialize DB
 - REST API server exposing `/payment-request` on `http://localhost:8080`
 - When request received, do the following:
     - Check authorization with user details stored in env vars
     - Check whether HTTP request is POST method
     - Decode request into payment struct
     - Validate request according to given JSONSchema
-    - Try to store payment as XML according to given XML in location of BANK_FOLDER env var
-    - send back 200 HTTP status with payment encoded
+    - Store payment in DB using goroutine
+    - Try to store payment as XML according to given XML in location of BANK_FOLDER env var using goroutine
+    - Start goroutine that waits for 'bank' to process the payment and updates the DB entry of the idempotency ID
+    - Wait for payment to be stored in DB, then send back 200 HTTP status with payment encoded
 
 ### Design
 
@@ -57,23 +62,20 @@ Decided to use `handler.go` as my main orchestrator throughout the customer jour
 
 Found out pretty late in the three hours about the `idempotency_unique_key` and its meaning as to handling multiple payment requests with a shared idempotency ID and that all tying into the DB design. Definitely a bit much for the three hours I had.
 
-Introduced asynchrony in this later stage, because DB handling and waiting for the 'bank' response should definitely be done asynchronously.
+Introduced asynchronicity in this later stage, because DB handling and waiting for the 'bank' response should definitely be done asynchronously.
 
 ### Changes from 3 hour version
 
 - SQLite DB support
 - Listen for bank response in a goroutine, update DB
-- Working tests for HTTP authorization and validation (not complete test coverage)
+- Working tests for HTTP validation (not complete test coverage)
 - Use panic instead of log.Fatal to be more Go idiomatic
 - Make everything run asynchronously
 
 ### Limitations
 
 - The project is missing the following features and/or functionality:
-    - Wait for bank response
-        - receive return file
-        - update DB
     - XML validation
-    - Idempotency
 - Besides that, limitations from my perspective:
     - No complete test coverage, just showing off some testing
+    - Can be expanded on in all kinds of directions (e.g. auth with middleware, having a separate payments service, DB connection pool, better error handling, etc.)

@@ -5,7 +5,6 @@ package payment
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -18,7 +17,7 @@ func InitializeDB() (*sql.DB, error) {
 
 	db, err := sql.Open("sqlite3", os.Getenv("SQLITE_DB_FILE_LOCATION"))
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("Error opening DB file: %v", err))
 	}
 
 	sqlStmt := `
@@ -38,7 +37,7 @@ func PrintDB(db *sql.DB) {
 	fmt.Println("Printing DB...")
 	rows, err := db.Query("select id, status from payments")
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("Error with DB schema: %v", err))
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -46,7 +45,7 @@ func PrintDB(db *sql.DB) {
 		var status string
 		err = rows.Scan(&id, &status)
 		if err != nil {
-			log.Fatal(err)
+			panic(fmt.Sprintf("Error scanning DB row according to schema: %v", err))
 		}
 		fmt.Println(id, status)
 	}
@@ -64,7 +63,7 @@ func InsertPayment(db *sql.DB, payment Payment) error {
 
 	stmt, err := tx.Prepare("insert into payments(id, status) values(?, ?)")
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("Error preparing statement: %v", err))
 	}
 	defer stmt.Close()
 
@@ -100,7 +99,7 @@ func UpdatePayment(db *sql.DB, id string, status string) error {
 
 	stmt, err := tx.Prepare(`update payments set status = ? where id = ?`)
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("Error preparing statement: %v", err))
 	}
 	defer stmt.Close()
 
