@@ -35,7 +35,7 @@ Home of the main package and the web server launch function
 ./internal/payment  
 Home of the payment package containing the services. Mainly the HTTP handler as well as the bank connector. 
 
-### Customer journery
+### Customer journey
 
 - (Re-)initialize DB
 - REST API server exposing `/payment-request` on `http://localhost:8080`

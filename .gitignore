@@ -24,4 +24,8 @@ go.work.sum
 # env file
 .env
 
+# Go binary
+bin/
+
 bank/
+bank.db
