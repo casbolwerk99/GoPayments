@@ -71,7 +71,7 @@ func TestIsValidRequest(t *testing.T) {
 				DebtorName:           "company1",
 				CreditorIban:         "DE65500105179799248552",
 				CreditorName:         "beneficiary",
-				Ammount:              42.99,
+				Ammount:              4299,
 				IdempotencyUniqueKey: "JXJ984XXXZ",
 			},
 			expectedValid: true,
@@ -83,7 +83,7 @@ func TestIsValidRequest(t *testing.T) {
 				DebtorName:           "company1",
 				CreditorIban:         "DE65500105179799248552",
 				CreditorName:         "beneficiary",
-				Ammount:              42.99,
+				Ammount:              4299,
 				IdempotencyUniqueKey: "JXJ984XXXZ",
 			},
 			expectedValid: false,
@@ -95,7 +95,7 @@ func TestIsValidRequest(t *testing.T) {
 				DebtorName:           "a",
 				CreditorIban:         "DE65500105179799248552",
 				CreditorName:         "beneficiary",
-				Ammount:              42.99,
+				Ammount:              4299,
 				IdempotencyUniqueKey: "JXJ984XXXZ",
 			},
 			expectedValid: false,
@@ -106,7 +106,7 @@ func TestIsValidRequest(t *testing.T) {
 				DebtorName:           "company1",
 				CreditorIban:         "DE65500105179799248552",
 				CreditorName:         "beneficiary",
-				Ammount:              42.99,
+				Ammount:              4299,
 				IdempotencyUniqueKey: "JXJ984XXXZ",
 			},
 			expectedValid: false,
@@ -115,7 +115,10 @@ func TestIsValidRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := isValidRequest(tt.payment)
+			result, err := isValidRequest(tt.payment)
+			if err != nil {
+				t.Errorf("Error validating request: %v", err)
+			}
 			if result != tt.expectedValid {
 				t.Errorf("Expected %v, but got %v", tt.expectedValid, result)
 			}

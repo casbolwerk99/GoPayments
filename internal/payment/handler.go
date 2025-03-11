@@ -48,22 +48,23 @@ func isAuthorizedRequest(r *http.Request) bool {
 	return credentials == os.Getenv("username")+":"+os.Getenv("password")
 }
 
-func isValidRequest(payment Payment) bool {
+func isValidRequest(payment Payment) (bool, error) {
 	schema, err := jsonschema.NewCompiler().Compile(paymentSchemaPath)
 	if err != nil {
-		panic(fmt.Sprintf("Error compiling JSONSchema: %v", err))
+		fmt.Sprintln("Error compiling JSONSchema:", err)
+		return false, err
 	}
 	instance, err := json.Marshal(payment)
 	if err != nil {
-		return false
+		return false, nil
 	}
 
 	if err = schema.Validate(bytes.NewReader(instance)); err != nil {
 		fmt.Println("Error validating payment:", err)
-		return false
+		return false, err
 	}
 
-	return true
+	return true, nil
 }
 
 func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +84,12 @@ func (h *Handler) HandleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !isValidRequest(payment) {
+	validRequest, err := isValidRequest(payment)
+	if err != nil {
+		http.Error(w, "Error validating request", http.StatusInternalServerError)
+		return
+	}
+	if !validRequest {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

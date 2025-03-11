@@ -38,8 +38,8 @@ type Dbtr struct {
 }
 
 type Amt struct {
-	Ccy   string  `xml:"Ccy,attr"`
-	Value float64 `xml:",chardata"`
+	Ccy   string `xml:"Ccy,attr"`
+	Value int64  `xml:",chardata"`
 }
 
 type Document struct {
@@ -53,7 +53,7 @@ type Document struct {
 	Amt     Amt      `xml:"Amt"`
 }
 
-func generateXml(payment Payment) []byte {
+func generateXml(payment Payment) ([]byte, error) {
 	creDtTm := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
 
 	doc := Document{
@@ -68,17 +68,27 @@ func generateXml(payment Payment) []byte {
 
 	xmlData, err := xml.MarshalIndent(doc, "", "  ")
 	if err != nil {
-		panic(fmt.Sprintf("Error compiling XML document: %v", err))
+		fmt.Sprintln("Error compiling XML document:", err)
+		return nil, err
 	}
 
 	xmlData = append([]byte(`<?xml version="1.0" encoding="UTF-8"?>`), xmlData...)
 
-	return xmlData
+	return xmlData, nil
 }
 
 func WritePaymentToBank(payment Payment, filename string) error {
-	data := generateXml(payment)
+	data, err := generateXml(payment)
+	if err != nil {
+		return err
+	}
+
 	msgId := uuid.New().String()
-	err := os.WriteFile(filename+string(filepath.Separator)+msgId+".xml", data, 0644)
-	return err
+	filename = filename + string(filepath.Separator) + msgId + ".xml"
+
+	if err := os.WriteFile(filename, data, 0644); err != nil {
+		return fmt.Errorf("failed to write payment XML: %w", err)
+	}
+
+	return nil
 }

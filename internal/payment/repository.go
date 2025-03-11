@@ -17,7 +17,8 @@ func InitializeDB() (*sql.DB, error) {
 
 	db, err := sql.Open("sqlite3", os.Getenv("SQLITE_DB_FILE_LOCATION"))
 	if err != nil {
-		panic(fmt.Sprintf("Error opening DB file: %v", err))
+		fmt.Println("Error opening DB file:", err)
+		return nil, err
 	}
 
 	sqlStmt := `
@@ -33,11 +34,12 @@ func InitializeDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func PrintDB(db *sql.DB) {
+func PrintDB(db *sql.DB) error {
 	fmt.Println("Printing DB...")
 	rows, err := db.Query("select id, status from payments")
 	if err != nil {
-		panic(fmt.Sprintf("Error with DB schema: %v", err))
+		fmt.Println("Error with DB schema:", err)
+		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -45,10 +47,12 @@ func PrintDB(db *sql.DB) {
 		var status string
 		err = rows.Scan(&id, &status)
 		if err != nil {
-			panic(fmt.Sprintf("Error scanning DB row according to schema: %v", err))
+			fmt.Println("Error scanning DB row according to schema:", err)
+			return err
 		}
 		fmt.Println(id, status)
 	}
+	return nil
 }
 
 func InsertPayment(db *sql.DB, payment Payment) error {
@@ -63,7 +67,8 @@ func InsertPayment(db *sql.DB, payment Payment) error {
 
 	stmt, err := tx.Prepare("insert into payments(id, status) values(?, ?)")
 	if err != nil {
-		panic(fmt.Sprintf("Error preparing statement: %v", err))
+		fmt.Println("Error preparing statement:", err)
+		return err
 	}
 	defer stmt.Close()
 
@@ -99,7 +104,8 @@ func UpdatePayment(db *sql.DB, id string, status string) error {
 
 	stmt, err := tx.Prepare(`update payments set status = ? where id = ?`)
 	if err != nil {
-		panic(fmt.Sprintf("Error preparing statement: %v", err))
+		fmt.Println("Error preparing statement:", err)
+		return err
 	}
 	defer stmt.Close()
 

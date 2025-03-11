@@ -10,16 +10,15 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file")
-		panic(fmt.Sprintf("Error loading .env file: %v", err))
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("Error loading .env file:", err)
+		return
 	}
 
 	db, err := payment.InitializeDB()
 	if err != nil {
-		fmt.Println("Error initializing DB")
-		panic(fmt.Sprintf("Error initializing DB: %v", err))
+		fmt.Println("Error initializing DB:", err)
+		return
 	}
 	defer db.Close()
 
@@ -28,5 +27,8 @@ func main() {
 	http.HandleFunc("/payment-request", handler.HandleCreatePayment)
 	port := ":8080"
 	fmt.Println("Server is running on http://localhost" + port)
-	http.ListenAndServe(port, nil)
+	if err := http.ListenAndServe(port, nil); err != nil {
+		fmt.Println("Error serving the server:", err)
+		return
+	}
 }
