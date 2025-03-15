@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/santhosh-tekuri/jsonschema"
 )
 
@@ -21,11 +22,12 @@ const (
 )
 
 type Handler struct {
-	db *sql.DB
+	db    *sql.DB
+	cache *lru.Cache[string, string]
 }
 
-func NewHandler(db *sql.DB) *Handler {
-	return &Handler{db: db}
+func NewHandler(db *sql.DB, cache *lru.Cache[string, string]) *Handler {
+	return &Handler{db: db, cache: cache}
 }
 
 func isAuthorizedRequest(r *http.Request) bool {

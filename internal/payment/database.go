@@ -11,7 +11,7 @@ import (
 )
 
 func InitializeDB() (*sql.DB, error) {
-	os.Remove(os.Getenv("SQLITE_DB_FILE_LOCATION"))
+	os.Getenv("SQLITE_DB_FILE_LOCATION")
 
 	fmt.Println("Initializing DB...")
 
@@ -22,8 +22,7 @@ func InitializeDB() (*sql.DB, error) {
 	}
 
 	sqlStmt := `
-	create table payments (id text not null primary key, status text);
-	delete from payments;
+	create table if not exists payments (id text not null primary key, status text);
 	`
 	_, err = db.Exec(sqlStmt)
 	if err != nil {

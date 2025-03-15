@@ -22,7 +22,13 @@ func main() {
 	}
 	defer db.Close()
 
-	handler := payment.NewHandler(db)
+	cache, err := payment.InitializeCache()
+	if err != nil {
+		fmt.Println("Error initializing cache:", err)
+		return
+	}
+
+	handler := payment.NewHandler(db, cache)
 
 	http.HandleFunc("/payment-request", handler.HandleCreatePayment)
 	port := ":8080"
