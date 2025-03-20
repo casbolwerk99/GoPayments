@@ -23,7 +23,6 @@ You can also find a Python file to do some bulk requests. I used this to test th
 
 ### Project structure
 
-numeral  
 Root folder. Contains `.env` for environment variables, `Makefile` for easy launching of the project and the README.
 
 ./data  
